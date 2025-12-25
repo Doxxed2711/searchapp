@@ -1,0 +1,57 @@
+%%writefile main.py
+import requests
+import traceback
+import os
+import sys
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.clock import Clock
+
+# --- PASTE YOUR RAW GIST URL BELOW ---
+# Example: "https://gist.githubusercontent.com/YourUser/12345/raw/app.py"
+UPDATE_URL = "https://gist.githubusercontent.com/Doxxed2711/e0e18cf5d3a57f837eadde355eeeb7b0/raw/c94a8ff08b804d7f6f2c1ec8550e9de79832fcfe/app.py"
+# -------------------------------------
+
+class LauncherApp(App):
+    def build(self):
+        self.layout = BoxLayout(orientation='vertical', padding=50)
+        self.status_label = Label(text="Checking for updates...", font_size='20sp', halign='center')
+        self.status_label.bind(size=self.status_label.setter('text_size'))
+        self.layout.add_widget(self.status_label)
+        Clock.schedule_once(self.run_update, 1)
+        return self.layout
+
+    def run_update(self, dt):
+        try:
+            # Headers prevent GitHub from serving an old cached version
+            headers = {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}
+            print(f"Fetching from: {UPDATE_URL}")
+
+            # verify=False is the key fix for the SSL error you saw earlier
+            req = requests.get(UPDATE_URL, headers=headers, timeout=20, verify=False)
+
+            if req.status_code == 200:
+                self.status_label.text = "Success! Launching..."
+                print("Code downloaded successfully.")
+
+                # Execute the downloaded code as Python
+                try:
+                    exec(req.text, globals())
+                    self.stop()
+                    # The downloaded script must have a class named 'RealApp'
+                    if 'RealApp' in globals():
+                        RealApp().run()
+                    else:
+                        self.status_label.text = "Error: Code downloaded but 'RealApp' class is missing."
+                except Exception as e:
+                    self.status_label.text = f"Code Error:\n{e}"
+            else:
+                self.status_label.text = f"Download Failed: {req.status_code}"
+
+        except Exception as e:
+            self.status_label.text = f"Connection Error:\n{e}"
+
+if __name__ == "__main__":
+    LauncherApp().run()
