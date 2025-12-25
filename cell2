@@ -1,0 +1,30 @@
+# 1. FORCE INSTALL SYSTEM DEPENDENCIES
+# This fixes "buildozer: command not found" and "AC_PROG_LIBTOOL" errors
+!sudo apt-get update
+!sudo apt-get install -y python3-pip build-essential git python3 python3-dev ffmpeg \
+    libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+    libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
+    zlib1g-dev libtool libtool-bin automake autoconf pkg-config unzip
+
+# 2. INSTALL BUILDOZER
+!pip install buildozer cython==0.29.33
+
+# 3. RESET & INIT
+!rm -rf .buildozer bin buildozer.spec
+!buildozer init
+
+# 4. CONFIGURE SETTINGS
+# This fixes the architecture crash and enables Internet access
+!sed -i 's/android.archs = armeabi-v7a, arm64-v8a/android.archs = arm64-v8a/g' buildozer.spec
+!sed -i 's/requirements = python3, kivy/requirements = python3, kivy, requests, certifi, openssl/g' buildozer.spec
+# IMPORTANT: This next line fixes the [Errno 7] No address error
+!sed -i 's/# android.permissions = INTERNET/android.permissions = INTERNET/g' buildozer.spec
+!sed -i 's/# android.manifest.application_attributes =/android.manifest.application_attributes = android:usesCleartextTraffic="true"/g' buildozer.spec
+
+# 5. BUILD
+print("Starting build...")
+# This ignores the 'grp' module error that stops many builds
+import os
+os.environ['CFLAGS'] = "-Wno-implicit-function-declaration"
+
+!yes | buildozer -v android debug
