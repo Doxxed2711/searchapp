@@ -1,0 +1,13 @@
+from google.colab import files
+import os
+
+# Look for the APK in the bin folder
+if os.path.exists("bin"):
+    apk_list = [f for f in os.listdir("bin") if f.endswith(".apk")]
+    if apk_list:
+        print(f"Downloading {apk_list[0]}...")
+        files.download(f"bin/{apk_list[0]}")
+    else:
+        print("No APK found in the bin folder.")
+else:
+    print("Bin folder not found. Did the build finish?")
